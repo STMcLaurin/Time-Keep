@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TimeKeep — Time & Date Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="script.js" defer></script>
+
+</head>
+<body>
+
+<div id="toastHost"></div>
+
+<!-- ================= AUTH SCREEN ================= -->
+<div id="authScreen">
+  <div class="auth-card">
+    <div class="auth-brand"><div class="mark">&#9201;</div><span>TimeKeep</span></div>
+    <div class="auth-tag">Know exactly how much time you have, how much has passed, and what comes next.</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLogin" onclick="AuthUI.switchTab('login')">Log in</button>
+      <button class="auth-tab" id="tabSignup" onclick="AuthUI.switchTab('signup')">Sign up</button>
+    </div>
+    <div id="authError" class="auth-error hidden"></div>
+
+    <form id="loginForm" onsubmit="AuthUI.login(event)">
+      <div class="field"><label>Email</label><input type="email" id="loginEmail" required placeholder="you@example.com"></div>
+      <div class="field"><label>Password</label><input type="password" id="loginPassword" required placeholder="••••••••"></div>
+      <button type="submit" class="btn btn-brass btn-block">Log in</button>
+    </form>
+
+    <form id="signupForm" class="hidden" onsubmit="AuthUI.signup(event)">
+      <div class="field"><label>Name</label><input type="text" id="suName" required placeholder="Kia"></div>
+      <div class="field"><label>Email</label><input type="email" id="suEmail" required placeholder="you@example.com"></div>
+      <div class="field"><label>Password</label><input type="password" id="suPassword" required placeholder="At least 6 characters" minlength="6"></div>
+      <button type="submit" class="btn btn-brass btn-block">Create account</button>
+    </form>
+
+    <div class="auth-demo">No account needed to try it — <button onclick="AuthUI.demo()">continue with a demo profile</button></div>
+  </div>
+</div>
+
+<!-- ================= APP SHELL ================= -->
+<div id="app" class="hidden">
+  <nav class="rail">
+    <div class="rail-brand"><div class="mark">&#9201;</div><span>TimeKeep</span></div>
+    <div class="rail-nav">
+      <button class="rail-item active" data-view="home" onclick="Nav.go('home')"><span class="ic">&#8962;</span>Home</button>
+      <button class="rail-item" data-view="calculate" onclick="Nav.go('calculate')"><span class="ic">&#8734;</span>Calculate</button>
+      <button class="rail-item" data-view="dates" onclick="Nav.go('dates')"><span class="ic">&#128197;</span>Important dates</button>
+      <button class="rail-item" data-view="reminders" onclick="Nav.go('reminders')"><span class="ic">&#128276;</span>Reminders</button>
+      <button class="rail-item" data-view="profile" onclick="Nav.go('profile')"><span class="ic">&#9881;</span>Profile</button>
+    </div>
+    <div class="rail-foot">
+      <div class="rail-user">
+        <div class="av" id="railAvatar">K</div>
+        <div class="meta">
+          <div class="name" id="railName">—</div>
+          <div class="plan"><span id="railPlanText">Free plan</span></div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- ---------------- HOME ---------------- -->
+    <section class="view active" id="view-home">
+      <div class="view-head">
+        <div><h1>Home</h1><div class="sub" id="homeGreeting">Welcome back.</div></div>
+        <button class="btn btn-brass" onclick="EventsUI.openEditor()">+ New event</button>
+      </div>
+
+      <div class="hero-clock">
+        <div>
+          <div class="date" id="homeDateStr">—</div>
+          <div class="time num" id="homeTimeStr">—</div>
+          <div class="tz" id="homeTzStr">—</div>
+        </div>
+        <div class="chrono tiny" id="homeMiniStats"></div>
+      </div>
+
+      <div id="upgradeBannerHome"></div>
+
+      <h3 style="margin-bottom:12px;font-size:16px;">Upcoming</h3>
+      <div class="grid grid-3" id="homeUpcoming"></div>
+    </section>
+
+    <!-- ---------------- CALCULATE ---------------- -->
+    <section class="view" id="view-calculate">
+      <div class="view-head">
+        <div><h1>Calculate</h1><div class="sub">Every result, calendar-accurate — leap years, month lengths, and all.</div></div>
+      </div>
+
+      <div class="tool-tabs" id="calcTabs">
+        <button class="tool-tab active" data-tool="diff" onclick="CalcUI.switchTool('diff')">Date difference</button>
+        <button class="tool-tab" data-tool="add" onclick="CalcUI.switchTool('add')">Add time</button>
+        <button class="tool-tab" data-tool="subtract" onclick="CalcUI.switchTool('subtract')">Subtract time</button>
+        <button class="tool-tab" data-tool="elapsed" onclick="CalcUI.switchTool('elapsed')">How long ago?</button>
+        <button class="tool-tab" data-tool="age" onclick="CalcUI.switchTool('age')">Age calculator</button>
+        <button class="tool-tab" data-tool="bizdays" onclick="CalcUI.switchTool('bizdays')">Business days</button>
+        <button class="tool-tab" data-tool="nl" onclick="CalcUI.switchTool('nl')">Ask in plain English</button>
+      </div>
+
+      <div class="card">
+        <!-- Date difference -->
+        <div class="tool-panel active" id="tool-diff">
+          <div class="field-row">
+            <div class="field"><label>Start date</label><input type="date" id="diffStartDate"></div>
+            <div class="field"><label>Start time</label><input type="time" id="diffStartTime" value="09:00"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>End date</label><input type="date" id="diffEndDate"></div>
+            <div class="field"><label>End time</label><input type="time" id="diffEndTime" value="09:00"></div>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn-brass" onclick="CalcUI.runDiff()">Calculate</button>
+            <button class="btn btn-ghost" onclick="CalcUI.swapDiff()">&#8646; Swap dates</button>
+          </div>
+          <div id="diffResult"></div>
+        </div>
+
+        <!-- Add time -->
+        <div class="tool-panel" id="tool-add">
+          <div class="field-row"><div class="field"><label>Starting date</label><input type="date" id="addStartDate"></div><div class="field"><label>Time</label><input type="time" id="addStartTime" value="09:00"></div></div>
+          <div class="grid grid-4" style="margin-bottom:6px;">
+            <div class="field"><label>Years</label><input type="number" id="addYears" value="0" min="0"></div>
+            <div class="field"><label>Months</label><input type="number" id="addMonths" value="0" min="0"></div>
+            <div class="field"><label>Weeks</label><input type="number" id="addWeeks" value="0" min="0"></div>
+            <div class="field"><label>Days</label><input type="number" id="addDays" value="0" min="0"></div>
+          </div>
+          <div class="grid grid-4" style="margin-bottom:6px;">
+            <div class="field"><label>Hours</label><input type="number" id="addHours" value="0" min="0"></div>
+            <div class="field"><label>Minutes</label><input type="number" id="addMinutes" value="0" min="0"></div>
+            <div class="field"><label>Seconds</label><input type="number" id="addSeconds" value="0" min="0"></div>
+          </div>
+          <button class="btn btn-brass" onclick="CalcUI.runAdd(1)">Add time</button>
+          <div id="addResult"></div>
+        </div>
+
+        <!-- Subtract time -->
+        <div class="tool-panel" id="tool-subtract">
+          <div class="field-row"><div class="field"><label>Starting date</label><input type="date" id="subStartDate"></div><div class="field"><label>Time</label><input type="time" id="subStartTime" value="09:00"></div></div>
+          <div class="grid grid-4" style="margin-bottom:6px;">
+            <div class="field"><label>Years</label><input type="number" id="subYears" value="0" min="0"></div>
+            <div class="field"><label>Months</label><input type="number" id="subMonths" value="0" min="0"></div>
+            <div class="field"><label>Weeks</label><input type="number" id="subWeeks" value="0" min="0"></div>
+            <div class="field"><label>Days</label><input type="number" id="subDays" value="0" min="0"></div>
+          </div>
+          <div class="grid grid-4" style="margin-bottom:6px;">
+            <div class="field"><label>Hours</label><input type="number" id="subHours" value="0" min="0"></div>
+            <div class="field"><label>Minutes</label><input type="number" id="subMinutes" value="0" min="0"></div>
+            <div class="field"><label>Seconds</label><input type="number" id="subSeconds" value="0" min="0"></div>
+          </div>
+          <button class="btn btn-brass" onclick="CalcUI.runAdd(-1)">Subtract time</button>
+          <div id="subtractResult"></div>
+        </div>
+
+        <!-- Elapsed / past date -->
+        <div class="tool-panel" id="tool-elapsed">
+          <div class="field-row">
+            <div class="field"><label>Past date</label><input type="date" id="elapsedDate"></div>
+            <div class="field"><label>Time</label><input type="time" id="elapsedTime" value="09:00"></div>
+          </div>
+          <button class="btn btn-brass" onclick="CalcUI.runElapsed()">How long has it been?</button>
+          <div id="elapsedResult"></div>
+        </div>
+
+        <!-- Age calculator -->
+        <div class="tool-panel" id="tool-age">
+          <div class="field"><label>Date of birth</label><input type="date" id="ageDob"></div>
+          <button class="btn btn-brass" onclick="CalcUI.runAge()">Calculate age</button>
+          <div id="ageResult"></div>
+        </div>
+
+        <!-- Business days -->
+        <div class="tool-panel" id="tool-bizdays">
+          <div class="field-row">
+            <div class="field"><label>Start date</label><input type="date" id="bizStartDate"></div>
+            <div class="field"><label>Mode</label>
+              <select id="bizMode" onchange="CalcUI.toggleBizMode()">
+                <option value="between">Business days between two dates</option>
+                <option value="addn">Add N business days to a date</option>
+              </select>
+            </div>
+          </div>
+          <div class="field" id="bizEndWrap"><label>End date</label><input type="date" id="bizEndDate"></div>
+          <div class="field hidden" id="bizNWrap"><label>Business days to add</label><input type="number" id="bizN" value="10"></div>
+          <div class="field">
+            <label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="bizHolidays" checked style="width:auto;"> Exclude US federal holidays</label>
+          </div>
+          <button class="btn btn-brass" onclick="CalcUI.runBizDays()">Calculate</button>
+          <div id="bizResult"></div>
+        </div>
+
+        <!-- Natural language -->
+        <div class="tool-panel" id="tool-nl">
+          <div class="field">
+            <label>Ask a question</label>
+            <input type="text" id="nlInput" placeholder="e.g. how long until December 25, 2026? / 45 days from today / 3 years ago from March 1 2010">
+          </div>
+          <button class="btn btn-brass" onclick="CalcUI.runNL()">Answer</button>
+          <div class="hint" style="margin-top:10px;">Parsed by TimeKeep's own date engine — deterministic math, not a guess. Try "X days/weeks/months/years from today", "X ... ago", or "how long until &lt;date&gt;".</div>
+          <div id="nlResult"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------------- IMPORTANT DATES ---------------- -->
+    <section class="view" id="view-dates">
+      <div class="view-head">
+        <div><h1>Important dates</h1><div class="sub">Countdowns, birthdays, bills — everything you're tracking.</div></div>
+        <button class="btn btn-brass" onclick="EventsUI.openEditor()">+ New event</button>
+      </div>
+      <div id="upgradeBannerDates"></div>
+      <div class="chip-row" id="categoryFilter" style="margin-bottom:18px;"></div>
+      <div class="grid grid-3" id="datesGrid"></div>
+    </section>
+
+    <!-- ---------------- REMINDERS ---------------- -->
+    <section class="view" id="view-reminders">
+      <div class="view-head">
+        <div><h1>Reminders</h1><div class="sub">What's firing next, and your notification settings.</div></div>
+      </div>
+
+      <div class="card" style="margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;">
+        <div>
+          <div style="font-weight:600;font-size:14px;margin-bottom:3px;">Browser notifications</div>
+          <div class="hint" id="notifStatusText">Turn these on to get alerts when a reminder fires while TimeKeep is open.</div>
+        </div>
+        <button class="btn" id="notifBtn" onclick="Reminders.requestPermission()">Enable notifications</button>
+      </div>
+
+      <h3 style="margin-bottom:12px;font-size:16px;">Upcoming reminders</h3>
+      <div class="row-list" id="reminderList"></div>
+    </section>
+
+    <!-- ---------------- PROFILE ---------------- -->
+    <section class="view" id="view-profile">
+      <div class="view-head"><div><h1>Profile</h1><div class="sub">Account, plan, and preferences.</div></div></div>
+
+      <div class="grid grid-2" style="align-items:start;">
+        <div class="card">
+          <h3 style="font-size:15px;margin-bottom:16px;">Account</h3>
+          <div class="field"><label>Name</label><input type="text" id="profName"></div>
+          <div class="field"><label>Email</label><input type="text" id="profEmail" disabled></div>
+          <div class="field">
+            <label>Time zone</label>
+            <select id="profTz"></select>
+          </div>
+          <button class="btn btn-brass" onclick="ProfileUI.save()">Save changes</button>
+          <button class="btn btn-danger" style="margin-left:8px;" onclick="AuthUI.logout()">Log out</button>
+        </div>
+
+        <div class="card">
+          <h3 style="font-size:15px;margin-bottom:6px;">Plan</h3>
+          <p class="hint" style="margin-bottom:14px;" id="planDescription">—</p>
+          <div id="planActionArea"></div>
+          <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--line-soft);">
+            <div class="hint">Free: 5 active countdowns · 10 saved dates · basic themes</div>
+            <div class="hint">Pro: unlimited events, recurring reminders, business-day tools, all themes</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:20px;">
+        <h3 style="font-size:15px;margin-bottom:14px;">Theme</h3>
+        <div class="grid grid-4" id="themeGrid"></div>
+      </div>
+
+      <div class="card" style="margin-top:20px;">
+        <h3 style="font-size:15px;margin-bottom:4px;color:#f0a082;">Danger zone</h3>
+        <p class="hint" style="margin-bottom:14px;">Permanently delete your TimeKeep account and all saved data on this device.</p>
+        <button class="btn btn-danger" onclick="ProfileUI.deleteAccount()">Delete account</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<nav class="tabbar">
+  <button class="active" data-view="home" onclick="Nav.go('home')"><span class="ic">&#8962;</span>Home</button>
+  <button data-view="calculate" onclick="Nav.go('calculate')"><span class="ic">&#8734;</span>Calc</button>
+  <button data-view="dates" onclick="Nav.go('dates')"><span class="ic">&#128197;</span>Dates</button>
+  <button data-view="reminders" onclick="Nav.go('reminders')"><span class="ic">&#128276;</span>Alerts</button>
+  <button data-view="profile" onclick="Nav.go('profile')"><span class="ic">&#9881;</span>You</button>
+</nav>
+
+
+</body>
+</html>
